@@ -506,10 +506,21 @@
       : `<div class="msg-avatar-placeholder">${esc(initial)}</div>`;
 
     const attachmentsHtml = (msg.attachments || []).map(a => {
-      if (a.contentType && a.contentType.startsWith('image/')) {
-        return `<a href="${esc(a.url)}" target="_blank"><img class="msg-img" src="${esc(a.url)}" alt="${esc(a.name)}" loading="lazy" /></a>`;
+      // URL 문자열 또는 객체 둘 다 처리
+      const url = typeof a === 'string' ? a : a.url;
+      const name = (typeof a === 'object' && a.name) ? a.name : url?.split('/').pop()?.split('?')[0] || '파일';
+      const contentType = typeof a === 'object' ? a.contentType : null;
+
+      if (!url) return '';
+
+      // 이미지 판단: contentType 또는 확장자로 체크
+      const isImage = (contentType && contentType.startsWith('image/')) ||
+        /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+
+      if (isImage) {
+        return `<a href="${esc(url)}" target="_blank"><img class="msg-img" src="${esc(url)}" alt="${esc(name)}" loading="lazy" /></a>`;
       }
-      return `<a class="msg-attachment" href="${esc(a.url)}" target="_blank">📎 ${esc(a.name)}</a>`;
+      return `<a class="msg-attachment" href="${esc(url)}" target="_blank">📎 ${esc(name)}</a>`;
     }).join('');
 
     // 봇 임베드는 스킵 (시스템 메시지 제외 목적)
